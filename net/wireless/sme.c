@@ -581,6 +581,16 @@ void cfg80211_connect_bss(struct net_device *dev, const u8 *bssid,
 	struct cfg80211_event *ev;
 	unsigned long flags;
 
+	if (bss) {
+		/* Make sure the bss entry provided by the driver is valid. */
+		struct cfg80211_internal_bss *ibss = bss_from_pub(bss);
+
+		if (WARN_ON(list_empty(&ibss->list))) {
+			cfg80211_put_bss(wdev->wiphy, bss);
+			return;
+		}
+	}
+
 	CFG80211_DEV_WARN_ON(wdev->sme_state != CFG80211_SME_CONNECTING);
 	if (bss) {
 		/* Make sure the bss entry provided by the driver is valid. */
@@ -595,7 +605,7 @@ void cfg80211_connect_bss(struct net_device *dev, const u8 *bssid,
 	ev = kzalloc(sizeof(*ev) + req_ie_len + resp_ie_len, gfp);
 	if (!ev) {
 		cfg80211_put_bss(wdev->wiphy, bss);
-		return;
+ 		return;
 	}
 
 	ev->type = EVENT_CONNECT_RESULT;
